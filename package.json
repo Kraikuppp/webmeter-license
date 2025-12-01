@@ -4,10 +4,15 @@
   "description": "License key generator and validation API for WebMeter installers",
   "main": "src/server.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "generate": "node src/scripts/generate-batch.js"
+    "generate": "node src/scripts/generate-batch.js",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "dependencies": {
     "cors": "^2.8.5",

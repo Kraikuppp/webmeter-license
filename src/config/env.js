@@ -9,7 +9,7 @@ if (!process.env.LOADED_ENV) {
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(8080),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   ADMIN_API_SECRET: z.string().min(16, 'ADMIN_API_SECRET is too short'),
   INSTALLER_SECRET: z.string().min(16, 'INSTALLER_SECRET is too short'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60_000),
