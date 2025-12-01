@@ -11,9 +11,20 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
+// Fix CORS: Allow all origins (including file:// which is 'null') and custom headers
+app.use(cors({
+  origin: true, // Reflects the request origin (works for 'null' and others)
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-secret', 'x-installer-secret']
+}));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
+
 app.use(helmet());
 app.use(express.json());
-app.use(cors({ origin: env.CORS_ORIGIN === '*' ? undefined : env.CORS_ORIGIN }));
+// app.use(cors(...)); // Removed old CORS line
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });

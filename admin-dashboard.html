@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebMeter License Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">🔑 WebMeter License Generator</h1>
+        
+        <div class="space-y-4">
+            <!-- Settings -->
+            <div class="bg-blue-50 p-4 rounded border border-blue-200">
+                <h3 class="font-semibold text-blue-800 mb-2">⚙️ การตั้งค่าเชื่อมต่อ</h3>
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">API URL</label>
+                        <input type="text" id="apiUrl" value="https://webmeter-license.onrender.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border" placeholder="https://your-app.onrender.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Admin Secret Key</label>
+                        <input type="password" id="adminSecret" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border" placeholder="ใส่ ADMIN_API_SECRET จาก Render">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generator Form -->
+            <div class="border-t pt-4">
+                <h3 class="font-semibold text-gray-800 mb-3">📝 สร้าง License ใหม่</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">จำนวน Key</label>
+                        <input type="number" id="count" value="1" min="1" max="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">จำนวนเครื่อง (Max Devices)</label>
+                        <input type="number" id="maxDevices" value="1" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">วันหมดอายุ</label>
+                        <input type="date" id="expiryDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">ประเภท</label>
+                        <select id="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
+                            <option value="full">Full Version</option>
+                            <option value="demo">Demo / Trial</option>
+                            <option value="oem">OEM</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">ชื่อลูกค้า / หมายเหตุ</label>
+                        <input type="text" id="customerName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="เช่น บริษัท ABC จำกัด">
+                    </div>
+                </div>
+                
+                <button onclick="generateLicense()" class="mt-6 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-bold transition">
+                    ✨ สร้าง License Key
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="resultArea" class="mt-8 hidden">
+            <h3 class="font-semibold text-gray-800 mb-2">ผลลัพธ์:</h3>
+            <div class="bg-gray-800 rounded p-4 relative">
+                <button onclick="copyToClipboard()" class="absolute top-2 right-2 text-gray-400 hover:text-white text-sm bg-gray-700 px-2 py-1 rounded">Copy</button>
+                <pre id="output" class="text-green-400 font-mono text-sm overflow-x-auto"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default date to next year
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        document.getElementById('expiryDate').valueAsDate = nextYear;
+
+        async function generateLicense() {
+            const apiUrl = document.getElementById('apiUrl').value.replace(/\/$/, '');
+            const adminSecret = document.getElementById('adminSecret').value;
+            
+            if (!adminSecret) {
+                Swal.fire('แจ้งเตือน', 'กรุณาใส่ Admin Secret Key ก่อนครับ', 'warning');
+                return;
+            }
+
+            const payload = {
+                count: parseInt(document.getElementById('count').value),
+                maxDevices: parseInt(document.getElementById('maxDevices').value),
+                expiryDate: document.getElementById('expiryDate').value,
+                type: document.getElementById('type').value,
+                metadata: {
+                    customer: document.getElementById('customerName').value || 'Unknown'
+                }
+            };
+
+            const btn = document.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = '⏳ กำลังสร้าง...';
+            btn.disabled = true;
+
+            try {
+                const res = await axios.post(`${apiUrl}/api/v1/admin/licenses`, payload, {
+                    headers: {
+                        'x-admin-secret': adminSecret,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const keys = res.data.licenses.map(l => l.license_key).join('\n');
+                document.getElementById('output').innerText = keys;
+                document.getElementById('resultArea').classList.remove('hidden');
+                
+                Swal.fire('สำเร็จ!', `สร้าง ${res.data.count} คีย์เรียบร้อยแล้ว`, 'success');
+            } catch (err) {
+                console.error(err);
+                Swal.fire('เกิดข้อผิดพลาด', err.response?.data?.message || err.message, 'error');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('output').innerText;
+            navigator.clipboard.writeText(text);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'คัดลอกแล้ว',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+    </script>
+</body>
+</html>
